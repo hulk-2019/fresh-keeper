@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { useTranslation } from 'react-i18next';
 import { useItemDetail } from '@/hooks/useItemDetail';
-import { useCategories } from '@/hooks/useCategories';
+import { useTags } from '@/hooks/useTags';
 import { DaysLeftBadge } from '@/components/ui/DaysLeftBadge';
 import { useAppColors } from '@/contexts/ThemeContext';
 import { useI18n } from '@/contexts/I18nContext';
@@ -23,9 +23,10 @@ export default function ItemDetailScreen() {
   const colors = useAppColors();
   const { language } = useI18n();
   const { item, loading, archiveItem, deleteItem } = useItemDetail(id);
-  const { categories } = useCategories();
+  const { tags, loading: tagsLoading } = useTags();
 
-  const category = categories.find(c => c.id === item?.categoryId);
+  const itemTag = tags.find(t => item?.tagIds?.includes(t.id));
+  const tagColor = itemTag?.color ?? colors.primary;
   const lang = language === 'system' ? 'en' : language;
 
   function statusLabel(status: string): string {
@@ -54,7 +55,7 @@ export default function ItemDetailScreen() {
     ]);
   }
 
-  if (loading || !item) {
+  if (loading || tagsLoading || !item) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.screenBackground }]} edges={['top']}>
         <View style={styles.loadingRow}>
@@ -77,12 +78,12 @@ export default function ItemDetailScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={[styles.hero, { backgroundColor: (category?.color ?? colors.primary) + '22' }]}>
+        <View style={[styles.hero, { backgroundColor: tagColor + '22' }]}>
           {item.photoUri ? (
             <Image source={{ uri: item.photoUri }} style={styles.heroImage} contentFit="cover" />
           ) : (
             <View style={styles.heroPlaceholder}>
-              <View style={[styles.heroIcon, { backgroundColor: category?.color ?? colors.primary }]} />
+              <View style={[styles.heroIcon, { backgroundColor: tagColor }]} />
             </View>
           )}
           <View style={styles.heroOverlay}>
@@ -106,13 +107,13 @@ export default function ItemDetailScreen() {
               {item.daysLeft <= 0 ? t('items.expired') : `${item.daysLeft} days left`}
             </Text>
           </View>
-          {category && (
+          {itemTag && (
             <>
               <View style={[styles.divider, { backgroundColor: colors.separator }]} />
               <View style={styles.row}>
-                <View style={[styles.catDot, { backgroundColor: category.color }]} />
+                <View style={[styles.catDot, { backgroundColor: itemTag.color }]} />
                 <Text style={[styles.rowLabel, { color: colors.primaryText }]}>{t('itemDetail.category')}</Text>
-                <Text style={[styles.rowValue, { color: colors.secondaryText }]}>{category.name}</Text>
+                <Text style={[styles.rowValue, { color: colors.secondaryText }]}>{itemTag.name}</Text>
               </View>
             </>
           )}

@@ -1,21 +1,57 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { BottomSheet } from '@/components/ui/BottomSheet';
 import { useAppColors } from '@/contexts/ThemeContext';
+import { pickFromCamera, pickFromLibrary } from '@/services/PhotoEntryService';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   onManualEntry: () => void;
+  onImageEntry: (uri: string) => void;
 }
 
-export function AddEntrySheet({ visible, onClose, onManualEntry }: Props) {
+export function AddEntrySheet({ visible, onClose, onManualEntry, onImageEntry }: Props) {
   const { t } = useTranslation();
   const colors = useAppColors();
 
+  function handleImageEntry() {
+    Alert.alert(t('items.imageEntry'), '', [
+      {
+        text: t('items.takePhoto'),
+        onPress: async () => {
+          const uri = await pickFromCamera();
+          if (uri) { onClose(); onImageEntry(uri); }
+        },
+      },
+      {
+        text: t('items.chooseFromLibrary'),
+        onPress: async () => {
+          const uri = await pickFromLibrary();
+          if (uri) { onClose(); onImageEntry(uri); }
+        },
+      },
+      { text: t('common.cancel'), style: 'cancel' },
+    ]);
+  }
+
   return (
     <BottomSheet visible={visible} onClose={onClose}>
+      <TouchableOpacity
+        style={[styles.row, { backgroundColor: colors.screenBackground }]}
+        onPress={handleImageEntry}
+        activeOpacity={0.7}>
+        <View style={[styles.icon, { backgroundColor: colors.primary + '22' }]}>
+          <Text style={styles.iconText}>📷</Text>
+        </View>
+        <View style={styles.textBlock}>
+          <Text style={[styles.title, { color: colors.primaryText }]}>{t('items.imageEntry')}</Text>
+          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{t('items.imageEntryDesc')}</Text>
+        </View>
+        <Text style={[styles.chevron, { color: colors.separator }]}>›</Text>
+      </TouchableOpacity>
+
       <TouchableOpacity
         style={[styles.row, { backgroundColor: colors.screenBackground }]}
         onPress={onManualEntry}
@@ -29,17 +65,6 @@ export function AddEntrySheet({ visible, onClose, onManualEntry }: Props) {
         </View>
         <Text style={[styles.chevron, { color: colors.separator }]}>›</Text>
       </TouchableOpacity>
-
-      <View style={[styles.row, styles.rowDisabled, { backgroundColor: colors.screenBackground }]}>
-        <View style={[styles.icon, { backgroundColor: colors.secondaryText + '22' }]}>
-          <Text style={styles.iconText}>📷</Text>
-        </View>
-        <View style={styles.textBlock}>
-          <Text style={[styles.title, { color: colors.secondaryText }]}>{t('items.imageEntry')}</Text>
-          <Text style={[styles.subtitle, { color: colors.secondaryText }]}>{t('items.imageEntryDesc')} · {t('common.comingSoon')}</Text>
-        </View>
-        <Text style={[styles.chevron, { color: colors.separator }]}>›</Text>
-      </View>
     </BottomSheet>
   );
 }
@@ -52,9 +77,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     marginBottom: 8,
     paddingHorizontal: 14,
-  },
-  rowDisabled: {
-    opacity: 0.45,
   },
   icon: {
     width: 44,

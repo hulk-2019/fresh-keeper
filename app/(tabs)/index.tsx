@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useItems } from '@/hooks/useItems';
 import { useCategories } from '@/hooks/useCategories';
@@ -17,8 +18,10 @@ export default function ItemsScreen() {
   const colors = useAppColors();
   const [filter, setFilter] = useState<'all' | 'expiring'>('all');
   const [sheetVisible, setSheetVisible] = useState(false);
-  const { items, loading, allCount, expiringCount } = useItems();
+  const { items, loading, refresh, allCount, expiringCount } = useItems();
   const { categories } = useCategories();
+
+  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
 
   const categoryMap = Object.fromEntries(categories.map(c => [c.id, c]));
 
@@ -68,6 +71,10 @@ export default function ItemsScreen() {
       <AddEntrySheet
         visible={sheetVisible}
         onClose={() => setSheetVisible(false)}
+        onImageEntry={(uri) => {
+          setSheetVisible(false);
+          router.push({ pathname: '/modal', params: { photoUri: uri } } as any);
+        }}
         onManualEntry={() => {
           setSheetVisible(false);
           router.push('/modal' as any);

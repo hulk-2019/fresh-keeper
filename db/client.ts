@@ -67,16 +67,17 @@ export async function migrateDb(db: SQLiteDatabase): Promise<void> {
       PRAGMA user_version = 1;
     `);
 
-    for (const cat of BUILT_IN_CATEGORIES) {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO categories (id, name, icon, color, is_built_in) VALUES (?, ?, ?, ?, ?)',
-        [cat.id, cat.name, cat.icon, cat.color, 1]
-      );
-    }
-
     await db.runAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('defaultPrimaryReminderDays', '7')");
     await db.runAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('defaultSecondaryReminderDays', '30')");
     await db.runAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'system')");
     await db.runAsync("INSERT OR IGNORE INTO settings (key, value) VALUES ('theme', 'system')");
+  }
+
+  // 每次启动都确保内置分类存在（防止首次安装 version 已 >= 1 时种子缺失）
+  for (const cat of BUILT_IN_CATEGORIES) {
+    await db.runAsync(
+      'INSERT OR IGNORE INTO categories (id, name, icon, color, is_built_in) VALUES (?, ?, ?, ?, ?)',
+      [cat.id, cat.name, cat.icon, cat.color, 1]
+    );
   }
 }
