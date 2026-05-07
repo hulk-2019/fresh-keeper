@@ -85,3 +85,128 @@
    - 按 `a` 运行 Android 版本
    - 按 `i` 运行 iOS 版本
    - 按 `w` 运行 Web 版本
+
+---
+
+## 打包方案
+
+本项目使用 [EAS Build](https://docs.expo.dev/build/introduction/)（Expo Application Services）进行打包，支持 iOS 和 Android 双端构建。
+
+### 前置条件
+
+- 安装 EAS CLI：
+
+  ```bash
+  npm install -g eas-cli
+  ```
+
+- 登录 Expo 账号：
+
+  ```bash
+  eas login
+  ```
+
+### iOS 打包
+
+#### 开发预览包（Development Build）
+
+用于本地调试，安装到真机后可连接开发服务器：
+
+```bash
+eas build --platform ios --profile development
+```
+
+#### TestFlight 测试包
+
+提交至 TestFlight 供内测用户测试：
+
+```bash
+eas build --platform ios --profile preview
+```
+
+#### App Store 正式包
+
+构建用于提交 App Store 的生产包：
+
+```bash
+eas build --platform ios --profile production
+```
+
+构建完成后提交审核：
+
+```bash
+eas submit --platform ios
+```
+
+### Android 打包
+
+#### APK（直接安装）
+
+生成可直接安装的 APK 文件，适合内部测试分发：
+
+```bash
+eas build --platform android --profile preview
+```
+
+#### AAB（Google Play）
+
+生成用于上传 Google Play 的 AAB 格式包：
+
+```bash
+eas build --platform android --profile production
+```
+
+构建完成后提交 Google Play：
+
+```bash
+eas submit --platform android
+```
+
+### 双端同时构建
+
+```bash
+eas build --platform all --profile production
+```
+
+### OTA 热更新
+
+无需重新提交应用商店，直接推送 JS 层更新：
+
+```bash
+eas update --branch production --message "描述本次更新内容"
+```
+
+> 注意：OTA 更新仅适用于 JS/资源层变更，原生代码变更仍需重新打包提交。
+
+### eas.json 配置参考
+
+项目根目录的 `eas.json` 定义各环境的构建配置，典型结构如下：
+
+```json
+{
+  "cli": {
+    "version": ">= 16.0.0"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal"
+    },
+    "production": {
+      "autoIncrement": true
+    }
+  },
+  "submit": {
+    "production": {}
+  }
+}
+```
+
+如项目根目录尚未存在 `eas.json`，可通过以下命令初始化：
+
+```bash
+eas build:configure
+```
