@@ -3,7 +3,6 @@ export type ItemStatus = 'fresh' | 'expiring' | 'expired';
 export interface Item {
   id: string;
   name: string;
-  categoryId: string;
   tagIds: string[];
   photoUri?: string;
   productionDate?: string;
@@ -14,14 +13,6 @@ export interface Item {
   archived: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-export interface Category {
-  id: string;
-  name: string;
-  icon: string;
-  color: string;
-  isBuiltIn: boolean;
 }
 
 export interface Tag {

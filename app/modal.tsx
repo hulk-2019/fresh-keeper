@@ -23,7 +23,7 @@ export default function ModalScreen() {
 
   const [photoUri, setPhotoUri] = useState<string | undefined>(initialPhotoUri);
   const [name, setName] = useState('');
-  const [selectedTagId, setSelectedTagId] = useState('');
+  const [selectedTagIds, setSelectedTagIds] = useState<string[]>([]);
   const [quickTagName, setQuickTagName] = useState('');
   const [expiryDate, setExpiryDate] = useState('');
   const [productionDate, setProductionDate] = useState('');
@@ -73,7 +73,7 @@ export default function ModalScreen() {
     try {
       const persistedPhotoUri = photoUri ? await savePhoto(photoUri) : undefined;
       await createItem({
-        name: name.trim(), categoryId: 'cat_other', tagIds: selectedTagId ? [selectedTagId] : [],
+        name: name.trim(), tagIds: selectedTagIds,
         expiryDate,
         productionDate: productionDate || undefined,
         notes: notes.trim() || undefined,
@@ -143,11 +143,13 @@ export default function ModalScreen() {
                     style={[
                       styles.catChip,
                       { borderColor: tag.color, backgroundColor: colors.inputBackground },
-                      selectedTagId === tag.id && { backgroundColor: tag.color },
+                      selectedTagIds.includes(tag.id) && { backgroundColor: tag.color },
                     ]}
-                    onPress={() => setSelectedTagId(tag.id)}
+                    onPress={() => setSelectedTagIds(prev =>
+                      prev.includes(tag.id) ? prev.filter(id => id !== tag.id) : [...prev, tag.id]
+                    )}
                     activeOpacity={0.7}>
-                    <Text style={[styles.catText, { color: colors.primaryText }, selectedTagId === tag.id && styles.catTextActive]}>
+                    <Text style={[styles.catText, { color: colors.primaryText }, selectedTagIds.includes(tag.id) && styles.catTextActive]}>
                       {tag.name}
                     </Text>
                   </TouchableOpacity>

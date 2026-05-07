@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import { useItems } from '@/hooks/useItems';
-import { useCategories } from '@/hooks/useCategories';
+import { useTags } from '@/hooks/useTags';
 import { FilterTabBar } from '@/components/items/FilterTabBar';
 import { ItemCard } from '@/components/items/ItemCard';
 import { AddEntrySheet } from '@/components/items/AddEntrySheet';
@@ -19,11 +19,11 @@ export default function ItemsScreen() {
   const [filter, setFilter] = useState<'all' | 'expiring'>('all');
   const [sheetVisible, setSheetVisible] = useState(false);
   const { items, loading, refresh, allCount, expiringCount } = useItems();
-  const { categories } = useCategories();
+  const { tags, refresh: refreshTags } = useTags();
 
-  useFocusEffect(useCallback(() => { refresh(); }, [refresh]));
+  useFocusEffect(useCallback(() => { refresh(); refreshTags(); }, [refresh, refreshTags]));
 
-  const categoryMap = Object.fromEntries(categories.map(c => [c.id, c]));
+  const tagMap = Object.fromEntries(tags.map(t => [t.id, t]));
 
   const displayed: Item[] = filter === 'expiring'
     ? items.filter(i => i.status === 'expiring')
@@ -53,7 +53,7 @@ export default function ItemsScreen() {
         renderItem={({ item }) => (
           <ItemCard
             item={item}
-            categoryColor={categoryMap[item.categoryId]?.color}
+            tags={item.tagIds.map(id => tagMap[id]).filter(Boolean)}
             onPress={() => router.push(`/item/${item.id}` as any)}
           />
         )}

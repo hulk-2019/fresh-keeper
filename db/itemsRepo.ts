@@ -5,7 +5,6 @@ import { Item, CreateItemInput, UpdateItemInput } from '@/types';
 interface ItemRow {
   id: string;
   name: string;
-  category_id: string;
   photo_uri: string | null;
   production_date: string | null;
   expiry_date: string;
@@ -19,7 +18,6 @@ function rowToPartialItem(row: ItemRow, tagIds: string[]): Omit<Item, 'daysLeft'
   return {
     id: row.id,
     name: row.name,
-    categoryId: row.category_id,
     tagIds,
     photoUri: row.photo_uri ?? undefined,
     productionDate: row.production_date ?? undefined,
@@ -60,9 +58,9 @@ export async function createItem(db: SQLiteDatabase, input: CreateItemInput): Pr
   const id = Crypto.randomUUID();
   const now = new Date().toISOString();
   await db.runAsync(
-    `INSERT INTO items (id, name, category_id, photo_uri, production_date, expiry_date, notes, archived, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?)`,
-    [id, input.name, input.categoryId, input.photoUri ?? null, input.productionDate ?? null,
+    `INSERT INTO items (id, name, photo_uri, production_date, expiry_date, notes, archived, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, 0, ?, ?)`,
+    [id, input.name, input.photoUri ?? null, input.productionDate ?? null,
      input.expiryDate, input.notes ?? null, now, now]
   );
   for (const tagId of input.tagIds) {
@@ -76,12 +74,11 @@ export async function updateItem(db: SQLiteDatabase, id: string, patch: UpdateIt
   const fields: string[] = ['updated_at = ?'];
   const values: (string | number | null)[] = [now];
 
-  if (patch.name !== undefined)           { fields.push('name = ?');            values.push(patch.name); }
-  if (patch.categoryId !== undefined)     { fields.push('category_id = ?');     values.push(patch.categoryId); }
-  if (patch.photoUri !== undefined)       { fields.push('photo_uri = ?');       values.push(patch.photoUri ?? null); }
-  if (patch.productionDate !== undefined) { fields.push('production_date = ?'); values.push(patch.productionDate ?? null); }
-  if (patch.expiryDate !== undefined)     { fields.push('expiry_date = ?');     values.push(patch.expiryDate); }
-  if (patch.notes !== undefined)          { fields.push('notes = ?');           values.push(patch.notes ?? null); }
+  if (patch.name !== undefined)             { fields.push('name = ?');            values.push(patch.name); }
+  if (patch.photoUri !== undefined)         { fields.push('photo_uri = ?');       values.push(patch.photoUri ?? null); }
+  if (patch.productionDate !== undefined)   { fields.push('production_date = ?'); values.push(patch.productionDate ?? null); }
+  if (patch.expiryDate !== undefined)       { fields.push('expiry_date = ?');     values.push(patch.expiryDate); }
+  if (patch.notes !== undefined)            { fields.push('notes = ?');           values.push(patch.notes ?? null); }
 
   values.push(id);
   await db.runAsync(`UPDATE items SET ${fields.join(', ')} WHERE id = ?`, values);

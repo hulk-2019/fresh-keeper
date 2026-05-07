@@ -1,15 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Image } from 'expo-image';
-import { useTranslation } from 'react-i18next';
-import { Item } from '@/types';
+import { Item, Tag } from '@/types';
 import { DaysLeftBadge } from '@/components/ui/DaysLeftBadge';
 import { useAppColors } from '@/contexts/ThemeContext';
 import { useI18n } from '@/contexts/I18nContext';
 
 interface Props {
   item: Item;
-  categoryColor?: string;
+  tags?: Tag[];
   onPress: () => void;
 }
 
@@ -19,10 +18,10 @@ function formatDate(dateStr: string, language: string): string {
   return new Intl.DateTimeFormat(locale, { month: 'short', day: 'numeric', year: 'numeric' }).format(d);
 }
 
-export function ItemCard({ item, categoryColor, onPress }: Props) {
+export function ItemCard({ item, tags, onPress }: Props) {
   const colors = useAppColors();
   const { language } = useI18n();
-  const placeholderBg = categoryColor ?? colors.primary;
+  const placeholderBg = tags?.[0]?.color ?? colors.primary;
 
   return (
     <TouchableOpacity
@@ -39,7 +38,14 @@ export function ItemCard({ item, categoryColor, onPress }: Props) {
 
       <View style={styles.info}>
         <Text style={[styles.name, { color: colors.primaryText }]} numberOfLines={1}>{item.name}</Text>
-        <Text style={[styles.date, { color: colors.secondaryText }]}>{formatDate(item.expiryDate, language === 'system' ? 'en' : language)}</Text>
+        <View style={styles.metaRow}>
+          {tags?.map(tag => (
+            <View key={tag.id} style={[styles.tagChip, { backgroundColor: tag.color + '22', borderColor: tag.color }]}>
+              <Text style={[styles.tagText, { color: tag.color }]} numberOfLines={1}>{tag.name}</Text>
+            </View>
+          ))}
+          <Text style={[styles.date, { color: colors.secondaryText }]}>{formatDate(item.expiryDate, language === 'system' ? 'en' : language)}</Text>
+        </View>
       </View>
 
       <DaysLeftBadge daysLeft={item.daysLeft} status={item.status} />
@@ -86,7 +92,23 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 16,
     fontWeight: '600',
-    marginBottom: 3,
+    marginBottom: 4,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+  },
+  tagChip: {
+    borderWidth: 1,
+    borderRadius: 10,
+    paddingHorizontal: 7,
+    paddingVertical: 1,
+  },
+  tagText: {
+    fontSize: 11,
+    fontWeight: '600',
   },
   date: {
     fontSize: 13,

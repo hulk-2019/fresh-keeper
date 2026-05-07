@@ -25,8 +25,8 @@ export default function ItemDetailScreen() {
   const { item, loading, archiveItem, deleteItem } = useItemDetail(id);
   const { tags, loading: tagsLoading } = useTags();
 
-  const itemTag = tags.find(t => item?.tagIds?.includes(t.id));
-  const tagColor = itemTag?.color ?? colors.primary;
+  const itemTags = tags.filter(t => item?.tagIds?.includes(t.id));
+  const tagColor = itemTags[0]?.color ?? colors.primary;
   const lang = language === 'system' ? 'en' : language;
 
   function statusLabel(status: string): string {
@@ -107,13 +107,19 @@ export default function ItemDetailScreen() {
               {item.daysLeft <= 0 ? t('items.expired') : `${item.daysLeft} days left`}
             </Text>
           </View>
-          {itemTag && (
+          {itemTags.length > 0 && (
             <>
               <View style={[styles.divider, { backgroundColor: colors.separator }]} />
               <View style={styles.row}>
-                <View style={[styles.catDot, { backgroundColor: itemTag.color }]} />
+                <View style={[styles.catDot, { backgroundColor: itemTags[0].color }]} />
                 <Text style={[styles.rowLabel, { color: colors.primaryText }]}>{t('itemDetail.category')}</Text>
-                <Text style={[styles.rowValue, { color: colors.secondaryText }]}>{itemTag.name}</Text>
+                <View style={styles.tagChips}>
+                  {itemTags.map(tag => (
+                    <View key={tag.id} style={[styles.tagChip, { backgroundColor: tag.color + '22', borderColor: tag.color }]}>
+                      <Text style={[styles.tagChipText, { color: tag.color }]}>{tag.name}</Text>
+                    </View>
+                  ))}
+                </View>
               </View>
             </>
           )}
@@ -204,6 +210,9 @@ const styles = StyleSheet.create({
   rowIcon: { fontSize: 16, marginRight: 10, width: 20, textAlign: 'center' },
   rowLabel: { flex: 1, fontSize: 16 },
   rowValue: { fontSize: 16, fontWeight: '500' },
+  tagChips: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'flex-end' },
+  tagChip: { borderWidth: 1, borderRadius: 10, paddingHorizontal: 8, paddingVertical: 2 },
+  tagChipText: { fontSize: 13, fontWeight: '600' },
   divider: { height: StyleSheet.hairlineWidth, marginLeft: 30 },
   notes: { fontSize: 15, lineHeight: 22, paddingBottom: 14 },
   actions: {

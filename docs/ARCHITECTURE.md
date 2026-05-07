@@ -6,7 +6,7 @@
 
 - 对家庭物品做到期日期管理
 - 支持手动录入与照片快速录入
-- 物品分类、标签、归档、搜索
+- 物品标签、归档、搜索
 - 到期提醒与多设备同步
 - 保持 Expo + React Native 的开发效率
 
@@ -96,7 +96,6 @@ fresh-keeper/
 │   ├── useItems.ts               # 物品列表、筛选、CRUD
 │   ├── useItemDetail.ts          # 单个物品详情
 │   ├── useTags.ts                # 标签 CRUD
-│   ├── useCategories.ts          # 分类数据
 │   ├── useReminders.ts           # 提醒配置
 │   ├── useSyncStatus.ts          # iCloud 同步状态
 │   ├── useSubscription.ts        # 订阅状态与权限判断
@@ -111,17 +110,13 @@ fresh-keeper/
 │   └── SubscriptionService.ts   # 订阅校验与权限
 │
 ├── db/
-│   ├── client.ts                 # SQLite 连接单例
-│   ├── migrations/               # 版本化 schema 迁移脚本
-│   │   └── 001_initial.sql
+│   ├── client.ts                 # SQLite 连接单例与版本化迁移
 │   ├── itemsRepo.ts              # Items 表 CRUD
 │   ├── tagsRepo.ts
-│   ├── categoriesRepo.ts
 │   └── remindersRepo.ts
 │
 ├── constants/
 │   ├── theme.ts                  # 颜色、字体、间距 token
-│   ├── categories.ts             # 内置分类列表（含图标）
 │   └── config.ts                 # 全局配置（提醒阈值等）
 │
 └── assets/
@@ -180,7 +175,6 @@ type ItemStatus = "fresh" | "expiring" | "expired";
 interface Item {
   id: string;
   name: string;
-  categoryId: string;
   tagIds: string[];
   photoUri?: string; // 本地文件路径
   productionDate?: string; // ISO 8601 date string
@@ -191,14 +185,6 @@ interface Item {
   archived: boolean;
   createdAt: string;
   updatedAt: string;
-}
-
-interface Category {
-  id: string;
-  name: string;
-  icon: string; // SF Symbol 名称（iOS）
-  color: string; // hex
-  isBuiltIn: boolean;
 }
 
 interface Tag {
@@ -252,12 +238,10 @@ status:
 ### 7.1 表结构
 
 ```sql
--- 001_initial.sql
-
 CREATE TABLE IF NOT EXISTS items (
   id              TEXT PRIMARY KEY,
   name            TEXT NOT NULL,
-  category_id     TEXT NOT NULL,
+  category_id     TEXT NOT NULL DEFAULT 'cat_other',  -- 保留列，已废弃
   photo_uri       TEXT,
   production_date TEXT,
   expiry_date     TEXT NOT NULL,
@@ -265,14 +249,6 @@ CREATE TABLE IF NOT EXISTS items (
   archived        INTEGER NOT NULL DEFAULT 0,  -- 0/1 布尔
   created_at      TEXT NOT NULL,
   updated_at      TEXT NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS categories (
-  id          TEXT PRIMARY KEY,
-  name        TEXT NOT NULL,
-  icon        TEXT NOT NULL,
-  color       TEXT NOT NULL,
-  is_built_in INTEGER NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS tags (
@@ -310,17 +286,12 @@ CREATE INDEX IF NOT EXISTS idx_items_archived    ON items(archived);
 CREATE INDEX IF NOT EXISTS idx_item_tags_item_id ON item_tags(item_id);
 ```
 
-### 7.2 内置分类种子数据（categories）
+### 7.2 迁移版本
 
-| id           | name                   | icon（SF Symbol）             | color   |
-| ------------ | ---------------------- | ----------------------------- | ------- |
-| cat_food     | Food                   | fork.knife                    | #4CAF50 |
-| cat_medicine | Medicine               | cross.case                    | #F44336 |
-| cat_skincare | Skincare               | sparkles                      | #E91E63 |
-| cat_baby     | Baby                   | figure.and.child.holdinghands | #FF9800 |
-| cat_pet      | Pet                    | pawprint                      | #795548 |
-| cat_snacks   | Snacks & Instant Foods | bag                           | #FFC107 |
-| cat_other    | Other                  | archivebox                    | #9E9E9E |
+| 版本 | 内容 |
+| ---- | ---- |
+| v1   | 初始 schema，含 categories 表 |
+| v2   | 删除 categories 表（分类功能由 tags 替代） |
 
 ---
 
@@ -368,7 +339,7 @@ updateItem(id: string, patch: Partial<Item>): Promise<Item>
 archiveItem(id: string): Promise<void>
 deleteItem(id: string): Promise<void>
 queryItems(filter: ItemFilter): Promise<Item[]>
-  // filter: { archived?, status?, categoryId?, tagId?, search? }
+  // filter: { archived?, status?, tagId?, search? }
 ```
 
 ### 9.2 PhotoEntryService
@@ -464,7 +435,7 @@ onRemoteChange(handler: (changes: SyncPayload) => void): void
 │  Item Info                  │
 │  🟢 Status          Fresh   │
 │  ⏳ Days Left    61 days left│
-│  📦 Category  Snacks & ...  │
+│  🏷️ Tags       零食  小吃   │
 │  Dates                      │
 │  📅 Production Date Apr 21  │
 │  📅 Expiry Date    Jun 21   │
